@@ -1,9 +1,10 @@
 let dailyWord;
-const apiUrl = `https://random-word-api.herokuapp.com/word?number=1&length=5`;
+const wordApiUrl = `https://random-word-api.herokuapp.com/word?number=1&length=5`;
+const validateApiUrl = `https://api.dictionaryapi.dev/api/v2/entries/en/`; // Free dictionary API
 
 async function fetchDailyWord() {
     try {
-        const response = await fetch(apiUrl);
+        const response = await fetch(wordApiUrl);
         const data = await response.json();
         if (data && data.length > 0) {
             dailyWord = data[0].toLowerCase();
@@ -13,6 +14,16 @@ async function fetchDailyWord() {
     } catch (error) {
         console.error("Error fetching daily word:", error);
         alert("Failed to fetch daily word. Please try again later.");
+    }
+}
+
+async function isValidWord(word) {
+    try {
+        const response = await fetch(`${validateApiUrl}${word}`);
+        return response.ok;
+    } catch (error) {
+        console.error("Error validating word:", error);
+        return false;
     }
 }
 
@@ -34,7 +45,7 @@ function handleKeyPress(key) {
         if (currentGuess.length === 5) {
             submitGuess();
         }
-    } else if (key === 'Delete' || key === 'Backspace') {
+    } else if (key === 'Backspace' || key === 'Delete') {
         currentGuess = currentGuess.slice(0, -1);
         updateGrid();
     } else if (currentGuess.length < 5 && /^[a-z]$/i.test(key)) {
@@ -43,7 +54,7 @@ function handleKeyPress(key) {
     }
 }
 
-function submitGuess() {
+async function submitGuess() {
     const guess = currentGuess;
     if (guess.length !== 5) {
         alert("Please enter a 5-letter word.");
@@ -52,6 +63,12 @@ function submitGuess() {
 
     if (attempts >= maxAttempts) {
         alert("You've used all your attempts!");
+        return;
+    }
+
+    const isValid = await isValidWord(guess);
+    if (!isValid) {
+        alert("Invalid word! Please enter a valid 5-letter word.");
         return;
     }
 
@@ -71,32 +88,46 @@ function submitGuess() {
     if (guess === dailyWord) {
         document.getElementById("message").textContent = "Congratulations! You've guessed the word!";
         disableKeyboard();
-    }else if (attempts >= maxAttempts) {
-        document.getElementById("message").textContent = "Sorry, you've used all your guesses. The word was:  ${dailyWord}";
+    } else if (attempts >= maxAttempts) {
+        document.getElementById("message").textContent = `Sorry, you've used all your guesses. The word was: ${dailyWord}`;
         disableKeyboard();
     }
 }
 
 function getFeedback(guess, word) {
     const feedback = [];
-    for (let i = 0; i < guess.length; i++) {
-        if (guess[i] === word[i]) {
-            feedback.push("correct");
-        } else if (word.includes(guess[i])) {
-            feedback.push("present");
-        } else {
-            feedback.push("absent");
+    const wordArray = word.split('');
+    const guessArray = guess.split('');
+
+    // First pass: Check for correct letters in the correct position
+    guessArray.forEach((letter, index) => {
+        if (letter === wordArray[index]) {
+            feedback[index] = 'correct';
+            wordArray[index] = null;  // Mark this letter as used
         }
-    }
+    });
+
+    // Second pass: Check for correct letters in the wrong position
+    guessArray.forEach((letter, index) => {
+        if (!feedback[index]) {
+            const foundIndex = wordArray.indexOf(letter);
+            if (foundIndex !== -1) {
+                feedback[index] = 'present';
+                wordArray[foundIndex] = null;  // Mark this letter as used
+            } else {
+                feedback[index] = 'absent';
+            }
+        }
+    });
+
     return feedback;
 }
 
 function updateKeyboard(guess, feedback) {
     const keys = document.querySelectorAll('.key');
-    keys.forEach((key) => {
-        const keyValue = key.getAttribute('data-key');
-        const index = guess.indexOf(keyValue);
-        if (index !== -1) {
+    guess.split('').forEach((letter, index) => {
+        const key = document.querySelector(`.key[data-key="${letter}"]`);
+        if (key) {
             key.classList.remove('correct', 'present', 'absent');
             key.classList.add(feedback[index]);
         }
