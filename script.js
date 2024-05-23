@@ -1,6 +1,6 @@
 let dailyWord;
 const wordApiUrl = `https://random-word-api.herokuapp.com/word?number=1&length=5`;
-const validateApiUrl = `https://api.dictionaryapi.dev/api/v2/entries/en/`; // Free dictionary API
+const validateApiUrl = `https://api.dictionaryapi.dev/api/v2/entries/en/`; 
 
 async function fetchDailyWord() {
     try {
@@ -86,10 +86,10 @@ async function submitGuess() {
     currentRow++;
 
     if (guess === dailyWord) {
-        document.getElementById("message").textContent = "Congratulations! You've guessed the word!";
+        showEndMessage("Congratulations! You've guessed the word!");
         disableKeyboard();
     } else if (attempts >= maxAttempts) {
-        document.getElementById("message").textContent = `Sorry, you've used all your guesses. The word was: ${dailyWord}`;
+        showEndMessage(`Sorry, you've used all your guesses. The word was: ${dailyWord}`);
         disableKeyboard();
     }
 }
@@ -141,6 +141,18 @@ function disableKeyboard() {
     });
 }
 
+function enableKeyboard() {
+    const keys = document.querySelectorAll('.key');
+    keys.forEach((key) => {
+        key.disabled = false;
+    });
+}
+
+function showEndMessage(message) {
+    document.getElementById("message").textContent = message;
+    document.getElementById('play-again-container').style.display = 'block';
+}
+
 document.addEventListener('keydown', (event) => {
     handleKeyPress(event.key);
 });
@@ -151,6 +163,27 @@ document.querySelectorAll('.key').forEach((key) => {
     });
 });
 
+document.getElementById('play-again').addEventListener('click', resetGame);
+
+function resetGame() {
+    attempts = 0;
+    currentGuess = '';
+    currentRow = 0;
+    document.getElementById("message").textContent = '';
+    document.getElementById('play-again-container').style.display = 'none';
+
+    document.querySelectorAll('.grid-cell').forEach((cell) => {
+        cell.textContent = '';
+        cell.classList.remove('correct', 'present', 'absent');
+    });
+    document.querySelectorAll('.key').forEach((key) => {
+        key.classList.remove('correct', 'present', 'absent');
+        key.disabled = false;
+    });
+    fetchDailyWord();
+}
+
 window.onload = async () => {
     await fetchDailyWord();
+    enableKeyboard();
 };

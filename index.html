@@ -10,7 +10,6 @@
     <div class="container">
         <h1>Wordle</h1>
         <div class="grid" id="grid">
-            <!-- 6 rows for guesses -->
             <div class="grid-row">
                 <div class="grid-cell"></div>
                 <div class="grid-cell"></div>
@@ -55,7 +54,6 @@
             </div>
         </div>
         <div id="keyboard" class="keyboard">
-            <!-- Keyboard rows -->
             <div class="keyboard-row">
                 <button class="key" data-key="q">Q</button>
                 <button class="key" data-key="w">W</button>
@@ -91,7 +89,12 @@
                 <button class="key" data-key="delete">Delete</button>
             </div>
         </div>
-        <div id="message"></div>
+        <div id="message-container">
+            <div id="message"></div>
+            <div id="play-again-container" style="display: none;">
+                <button id="play-again">Play Again</button>
+                </div>
+            </div>
     </div>
     <script src="script.js"></script>
 </body>
